@@ -34,33 +34,68 @@ def get_emails_sent_this_month(email_account=None):
 	return frappe.db.count("Email Queue", filters=filters)
 
 
+# def get_emails_sent_today(email_account=None):
+# 	"""Get count of emails sent from a specific email account.
+
+# 	:param email_account: name of the email account used to send mail
+
+# 	if email_account=None, email account filter is not applied while counting
+# 	"""
+# 	q = """
+# 		SELECT
+# 			COUNT(`name`)
+# 		FROM
+# 			`tabEmail Queue`
+# 		WHERE
+# 			`status` in ('Sent', 'Not Sent', 'Sending')
+# 			AND
+# 			`creation` > (NOW() - INTERVAL '24' HOUR)
+# 	"""
+
+# 	q_args = {}
+# 	if email_account is not None:
+# 		if email_account:
+# 			q += " AND email_account = %(email_account)s"
+# 			q_args["email_account"] = email_account
+# 		else:
+# 			q += " AND (email_account is null OR email_account='')"
+
+# 	return frappe.db.sql(q, q_args)[0][0]
+
 def get_emails_sent_today(email_account=None):
-	"""Get count of emails sent from a specific email account.
+        q_args = {}
 
-	:param email_account: name of the email account used to send mail
+        if frappe.db.db_type == "postgres":
+                q = """
+                        SELECT
+                                COUNT("name")
+                        FROM
+                                "tabEmail Queue"
+                        WHERE
+                                "status" in ('Sent', 'Not Sent', 'Sending')
+                                AND
+                                "creation" > (NOW() - INTERVAL '24 hours')
+                """
+        else:
+                q = """
+                        SELECT
+                                COUNT(`name`)
+                        FROM
+                                `tabEmail Queue`
+                        WHERE
+                                `status` in ('Sent', 'Not Sent', 'Sending')
+                                AND
+                                `creation` > (NOW() - INTERVAL 24 HOUR)
+                """
 
-	if email_account=None, email account filter is not applied while counting
-	"""
-	q = """
-		SELECT
-			COUNT(`name`)
-		FROM
-			`tabEmail Queue`
-		WHERE
-			`status` in ('Sent', 'Not Sent', 'Sending')
-			AND
-			`creation` > (NOW() - INTERVAL '24' HOUR)
-	"""
+        if email_account is not None:
+                if email_account:
+                        q += " AND email_account = %(email_account)s"
+                        q_args["email_account"] = email_account
+                else:
+                        q += " AND (email_account is null OR email_account='')"
 
-	q_args = {}
-	if email_account is not None:
-		if email_account:
-			q += " AND email_account = %(email_account)s"
-			q_args["email_account"] = email_account
-		else:
-			q += " AND (email_account is null OR email_account='')"
-
-	return frappe.db.sql(q, q_args)[0][0]
+        return frappe.db.sql(q, q_args)[0][0]
 
 
 def get_unsubscribe_message(unsubscribe_message: str, expose_recipients: str) -> "frappe._dict[str, str]":

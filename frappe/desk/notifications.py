@@ -336,22 +336,42 @@ def get_internal_links(doc, link, link_doctype):
 	return data
 
 
+# def get_external_links(doctype, name, links):
+# 	fieldname = links.get("non_standard_fieldnames", {}).get(doctype, links.get("fieldname"))
+# 	filters = {fieldname: name}
 def get_external_links(doctype, name, links):
-	fieldname = links.get("non_standard_fieldnames", {}).get(doctype, links.get("fieldname"))
-	filters = {fieldname: name}
+    fieldname = links.get(
+        "non_standard_fieldnames", {}
+    ).get(
+        doctype,
+        links.get("fieldname")
+    )
 
-	# updating filters based on dynamic_links
-	if dynamic_link_filters := get_dynamic_link_filters(doctype, links, fieldname):
-		filters.update(dynamic_link_filters)
+    if not frappe.get_meta(doctype).has_field(fieldname):
+        return {
+            "doctype": doctype,
+            "count": 0,
+            "open_count": 0,
+        }
 
-	total_count = get_doc_count(doctype, filters)
+    filters = {fieldname: name}
 
-	open_count = 0
-	if open_count_filters := get_filters_for(doctype):
-		filters.update(open_count_filters)
-		open_count = get_doc_count(doctype, filters)
+    # updating filters based on dynamic_links
+    if dynamic_link_filters := get_dynamic_link_filters(doctype, links, fieldname):
+        filters.update(dynamic_link_filters)
 
-	return {"doctype": doctype, "count": total_count, "open_count": open_count}
+    total_count = get_doc_count(doctype, filters)
+
+    open_count = 0
+    if open_count_filters := get_filters_for(doctype):
+        filters.update(open_count_filters)
+        open_count = get_doc_count(doctype, filters)
+
+    return {
+        "doctype": doctype,
+        "count": total_count,
+        "open_count": open_count,
+    }
 
 
 def get_doc_count(doctype, filters) -> int | Literal["?"]:

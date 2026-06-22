@@ -372,15 +372,26 @@ def process_data_deletion_request():
 			doc.trigger_data_deletion()
 
 
+# def remove_unverified_record():
+# 	frappe.db.sql(
+# 		"""
+# 		DELETE FROM `tabPersonal Data Deletion Request`
+# 		WHERE `status` = 'Pending Verification'
+# 		AND `creation` < (NOW() - INTERVAL '7' DAY)"""
+# 	)
+from frappe.utils import add_days, now_datetime
+
 def remove_unverified_record():
-	frappe.db.sql(
-		"""
-		DELETE FROM `tabPersonal Data Deletion Request`
-		WHERE `status` = 'Pending Verification'
-		AND `creation` < (NOW() - INTERVAL '7' DAY)"""
-	)
+        cutoff = add_days(now_datetime(), -7)
 
-
+        frappe.db.sql(
+                """
+                DELETE FROM `tabPersonal Data Deletion Request`
+                WHERE `status` = 'Pending Verification'
+                AND `creation` < %s
+                """,
+                cutoff,
+        )
 @frappe.whitelist(allow_guest=True)
 def confirm_deletion(email, name, host_name):
 	if not verify_request():
