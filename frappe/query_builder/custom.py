@@ -28,14 +28,26 @@ class GROUP_CONCAT(DistinctOptionFunction):
 	def get_sql(self, **kwargs):
 		query_alias = self.alias
 		self.alias = None
-		sql = super().get_sql(**kwargs)
-		if self._separator:
-			sql = f"{sql[:-1]} SEPARATOR {frappe.db.escape(self._separator)})"
+
+		if frappe.db.db_type == "postgres":
+			args = self.args[0].get_sql(**kwargs)
+
+			sql = f"STRING_AGG({args}, {frappe.db.escape(self._separator)})"
+
+			if self._distinct:
+				sql = f"STRING_AGG(DISTINCT {args}, {frappe.db.escape(self._separator)})"
+		else:
+			sql = super().get_sql(**kwargs)
+
+			if self._separator:
+				sql = f"{sql[:-1]} SEPARATOR {frappe.db.escape(self._separator)})"
 
 		self.alias = query_alias
+
 		if self.alias:
 			quote = kwargs.get("quote_char", "`")
 			sql += f" {quote}{self.alias}{quote}"
+
 		return sql
 
 

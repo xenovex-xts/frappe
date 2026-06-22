@@ -348,6 +348,32 @@ def contact_query(doctype, txt, searchfield, start, page_len, filters):
 	link_doctype = filters.pop("link_doctype", None)
 	link_name = filters.pop("link_name", None)
 
+	# return frappe.db.sql(
+	# 	f"""select
+	# 		`tabContact`.name, `tabContact`.full_name, `tabContact`.company_name
+	# 	from
+	# 		`tabContact`, `tabDynamic Link`
+	# 	where
+	# 		`tabDynamic Link`.parent = `tabContact`.name and
+	# 		`tabDynamic Link`.parenttype = 'Contact' and
+	# 		`tabDynamic Link`.link_doctype = %(link_doctype)s and
+	# 		`tabDynamic Link`.link_name = %(link_name)s and
+	# 		`tabContact`.`{searchfield}` like %(txt)s
+	# 		{get_match_cond(doctype)}
+	# 	order by
+	# 		if(locate(%(_txt)s, `tabContact`.full_name), locate(%(_txt)s, `tabContact`.company_name), 99999),
+	# 		`tabContact`.idx desc, `tabContact`.full_name
+	# 	limit %(start)s, %(page_len)s """,
+	# 	{
+	# 		"txt": "%" + txt + "%",
+	# 		"_txt": txt.replace("%", ""),
+	# 		"start": start,
+	# 		"page_len": page_len,
+	# 		"link_name": link_name,
+	# 		"link_doctype": link_doctype,
+	# 	},
+	# )
+
 	return frappe.db.sql(
 		f"""select
 			`tabContact`.name, `tabContact`.full_name, `tabContact`.company_name
@@ -361,7 +387,11 @@ def contact_query(doctype, txt, searchfield, start, page_len, filters):
 			`tabContact`.`{searchfield}` like %(txt)s
 			{get_match_cond(doctype)}
 		order by
-			if(locate(%(_txt)s, `tabContact`.full_name), locate(%(_txt)s, `tabContact`.company_name), 99999),
+			CASE
+				WHEN locate(%(_txt)s, `tabContact`.full_name) > 0
+				THEN locate(%(_txt)s, `tabContact`.company_name)
+				ELSE 99999
+			END,
 			`tabContact`.idx desc, `tabContact`.full_name
 		limit %(start)s, %(page_len)s """,
 		{
