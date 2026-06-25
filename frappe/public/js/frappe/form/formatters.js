@@ -95,11 +95,15 @@ frappe.form.formatters = {
 			return "";
 		}
 
+		const valuePrecision = value?.toString().split(".")[1]?.length || 0;
 		const precision =
 			docfield.precision ||
 			cint(frappe.boot.sysdefaults && frappe.boot.sysdefaults.float_precision) ||
 			2;
-		return frappe.form.formatters._right(format_number(value, null, precision) + "%", options);
+		return frappe.form.formatters._right(
+			format_number(value, null, Math.min(precision, valuePrecision)) + "%",
+			options
+		);
 	},
 	Rating: function (value, docfield) {
 		let rating_html = "";
@@ -296,14 +300,16 @@ frappe.form.formatters = {
 	Tag: function (value) {
 		var html = "";
 		$.each((value || "").split(","), function (i, v) {
-			if (v)
+			if (v) {
+				let ev = frappe.utils.escape_html(v);
 				html += `
 				<span
 					class="data-pill btn-xs align-center ellipsis"
 					style="background-color: var(--control-bg); box-shadow: none; margin-right: 4px;"
-					data-field="_user_tags" data-label="${v}'">
-					${v}
+					data-field="_user_tags" data-label="${ev}">
+					${ev}
 				</span>`;
+			}
 		});
 		return html;
 	},
@@ -313,13 +319,10 @@ frappe.form.formatters = {
 	Assign: function (value) {
 		var html = "";
 		$.each(JSON.parse(value || "[]"), function (i, v) {
-			if (v)
-				html +=
-					'<span class="label label-warning" \
-				style="margin-right: 7px;"\
-				data-field="_assign">' +
-					v +
-					"</span>";
+			if (v) {
+				let ev = frappe.utils.escape_html(v);
+				html += `<span class="label label-warning" style="margin-right: 7px;" data-field="_assign">${ev}</span>`;
+			}
 		});
 		return html;
 	},
