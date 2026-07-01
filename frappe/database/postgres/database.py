@@ -42,6 +42,11 @@ LOCATE_SUB_PATTERN = re.compile(r"locate\(([^,]+),([^)]+)(\)?)\)", flags=re.IGNO
 LOCATE_QUERY_PATTERN = re.compile(r"locate\(", flags=re.IGNORECASE)
 PG_TRANSFORM_PATTERN = re.compile(r"([=><]+)\s*([+-]?\d+)(\.0)?(?![a-zA-Z\.\d])")
 FROM_TAB_PATTERN = re.compile(r"from tab([\w-]*)", flags=re.IGNORECASE)
+# pypika renders regex matches (frappe.qb `.regexp()`) as the MySQL-only
+# `REGEXP` operator, which PostgreSQL does not understand. PostgreSQL uses the
+# `~*` operator (case-insensitive, matching MySQL's default case-insensitive
+# collation behaviour). Rewrite the operator so `.regexp()` stays portable.
+REGEXP_PATTERN = re.compile(r"\bREGEXP\b", flags=re.IGNORECASE)
 
 
 class PostgresExceptionUtil:
@@ -519,6 +524,8 @@ def modify_query(query):
 	# replace ` with " for definitions
 	query = str(query).replace("`", '"')
 	query = replace_locate_with_strpos(query)
+	# translate the MySQL-only REGEXP operator to PostgreSQL's `~*`
+	query = REGEXP_PATTERN.sub("~*", query)
 	# select from requires ""
 	query = FROM_TAB_PATTERN.sub(r'from "tab\1"', query)
 

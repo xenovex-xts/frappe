@@ -2,7 +2,7 @@ import re
 import types
 import typing
 
-from pypika import MySQLQuery, Order, PostgreSQLQuery, SQLLiteQuery, terms
+from pypika import JoinType, MySQLQuery, Order, PostgreSQLQuery, SQLLiteQuery, terms
 from pypika.dialects import MySQLQueryBuilder, PostgreSQLQueryBuilder, SQLLiteQueryBuilder
 from pypika.queries import QueryBuilder, Schema, Table
 from pypika.terms import Function
@@ -87,6 +87,51 @@ class MariaDB(Base, MySQLQuery):
 		return super().from_(table, *args, **kwargs)
 
 
+class PostgresQueryBuilder(PostgreSQLQueryBuilder):
+	"""Frappe's PostgreSQL query builder.
+
+	Adds portability shims so app code written with MariaDB semantics keeps
+	working on PostgreSQL without per-call rewrites.
+	"""
+
+	def get_sql(self, *args, **kwargs) -> str:
+		# PostgreSQL has no `UPDATE t JOIN t2 ON ... SET ...` form (that syntax
+		# is MySQL/MariaDB only); it uses `UPDATE t SET ... FROM t2 WHERE ...`.
+		# pypika renders the MySQL form for every dialect, so an update built
+		# with .join() is invalid on PostgreSQL. Rewrite inner joins into the
+		# FROM + WHERE form here. This only fires for update-with-join queries,
+		# which would otherwise fail outright, so the blast radius is limited to
+		# queries that are already broken on PostgreSQL.
+		if self._update_table is not None and self._joins and self._is_rewritable_update_join():
+			return self._update_join_get_sql(*args, **kwargs)
+		return super().get_sql(*args, **kwargs)
+
+	def _is_rewritable_update_join(self) -> bool:
+		# Only inner joins map cleanly to the UPDATE ... FROM form (which has
+		# inner-join semantics). Leave anything else to the default rendering.
+		return all(getattr(join, "how", None) == JoinType.inner for join in self._joins)
+
+	def _update_join_get_sql(self, *args, **kwargs) -> str:
+		# Temporarily move each joined table into FROM and its ON criterion into
+		# WHERE, render with the base builder, then restore state so get_sql
+		# stays idempotent (it is re-entered for subqueries, repr, etc.).
+		original_joins = self._joins
+		original_from = self._from
+		original_wheres = self._wheres
+		try:
+			self._from = [*self._from, *(join.item for join in original_joins)]
+			for join in original_joins:
+				criterion = getattr(join, "criterion", None)
+				if criterion is not None:
+					self._wheres = criterion if self._wheres is None else (self._wheres & criterion)
+			self._joins = []
+			return super().get_sql(*args, **kwargs)
+		finally:
+			self._joins = original_joins
+			self._from = original_from
+			self._wheres = original_wheres
+
+
 class Postgres(Base, PostgreSQLQuery):
 	field_translation = types.MappingProxyType({"table_name": "relname", "table_rows": "n_tup_ins"})
 	schema_translation = types.MappingProxyType({"tables": "pg_stat_all_tables"})
@@ -99,11 +144,11 @@ class Postgres(Base, PostgreSQLQuery):
 	# they are two different objects. The quick fix used here is to replace the
 	# Field names in the "Field" function.
 
-	_BuilderClasss = PostgreSQLQueryBuilder
+	_BuilderClasss = PostgresQueryBuilder
 
 	@classmethod
-	def _builder(cls, *args, **kwargs) -> "PostgreSQLQueryBuilder":
-		return super()._builder(*args, wrapper_cls=ParameterizedValueWrapper, **kwargs)
+	def _builder(cls, *args, **kwargs) -> "PostgresQueryBuilder":
+		return PostgresQueryBuilder(*args, wrapper_cls=ParameterizedValueWrapper, **kwargs)
 
 	@classmethod
 	def Field(cls, field_name, *args, **kwargs):

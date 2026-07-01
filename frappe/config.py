@@ -71,8 +71,12 @@ def _get_site_config(sites_path: str, site_path: str) -> _dict[str, Any]:
 
 		raise ValueError(f"Unsupported db_type={db_type}")
 
-	_apply_common_env_overrides(config)
-
+	config["redis_queue"] = (
+		os.environ.get("FRAPPE_REDIS_QUEUE") or config.get("redis_queue") or "redis://127.0.0.1:11311"
+	)
+	config["redis_cache"] = (
+		os.environ.get("FRAPPE_REDIS_CACHE") or config.get("redis_cache") or "redis://127.0.0.1:13311"
+	)
 	config["db_type"] = os.environ.get("FRAPPE_DB_TYPE") or config.get("db_type") or "mariadb"
 
 	if config["db_type"] in ("mariadb", "postgres"):
@@ -120,28 +124,16 @@ def get_common_site_config(sites_path: str | None = None, cached=False) -> _dict
 		return _get_common_site_config(sites_path)
 
 
-def _apply_common_env_overrides(config: _dict[str, Any]) -> None:
-	config["redis_queue"] = (
-		os.environ.get("FRAPPE_REDIS_QUEUE") or config.get("redis_queue") or "redis://127.0.0.1:11311"
-	)
-	config["redis_cache"] = (
-		os.environ.get("FRAPPE_REDIS_CACHE") or config.get("redis_cache") or "redis://127.0.0.1:13311"
-	)
-
-
 def _get_common_site_config(sites_path: str) -> _dict[str, Any]:
 	common_site_config = os.path.join(sites_path, "common_site_config.json")
-	config = _dict()
 	if os.path.exists(common_site_config):
 		try:
-			config = _dict(get_file_json(common_site_config))
+			return _dict(get_file_json(common_site_config))
 		except Exception as error:
 			click.secho("common_site_config.json is invalid", fg="red")
 			print(error)
 			raise
-
-	_apply_common_env_overrides(config)
-	return config
+	return _dict()
 
 
 # These variants cache the values in *memory* for repeat access, use it in web requests or anywhere
@@ -159,11 +151,6 @@ def get_conf(site: str | None = None) -> _dict[str, Any]:
 	if hasattr(frappe.local, "conf"):
 		return frappe.local.conf
 
-	sites_path = os.environ.get("SITES_PATH", ".")
-
 	# if no site, get from common_site_config.json
-	if site:
-		with frappe.init_site(site):
-			return frappe.local.conf
-	else:
-		return get_common_site_config(sites_path)
+	with frappe.init_site(site):
+		return frappe.local.conf

@@ -221,7 +221,7 @@ frappe.ui.form.Toolbar = class Toolbar {
 
 	setup_editable_title_click_event(element) {
 		let me = this;
-		element.off("click").on("click", () => {
+		element.on("click", () => {
 			let fields = [];
 			let docname = me.frm.doc.name;
 			let title_field = me.frm.meta.title_field || "";

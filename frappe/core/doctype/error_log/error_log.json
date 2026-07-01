@@ -1,7 +1,6 @@
 {
  "actions": [],
- "allow_bulk_edit": 1,
- "creation": "2026-07-01 13:17:35.482256",
+ "creation": "2013-01-16 13:09:40",
  "doctype": "DocType",
  "document_type": "System",
  "engine": "MyISAM",
@@ -16,7 +15,6 @@
   "method",
   "error",
   "trace_id",
-  "fingerprint",
   "metadata"
  ],
  "fields": [

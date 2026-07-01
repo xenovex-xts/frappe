@@ -186,8 +186,8 @@ class TestDocumentFollow(IntegrationTestCase):
 		frappe.share.remove("Event", event_doc.name, user.name)
 
 		frappe.set_user(user.name)
-		result = document_follow.follow_document("Event", event_doc.name, user.name)
-		self.assertFalse(result)
+		with self.assertRaises(frappe.PermissionError):
+			document_follow.follow_document("Event", event_doc.name, user.name)
 		frappe.set_user("Administrator")
 
 	def test_revoked_access_cleans_up_follow(self):

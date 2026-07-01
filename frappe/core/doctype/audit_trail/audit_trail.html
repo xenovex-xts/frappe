@@ -16,17 +16,17 @@
             <thead>
                 <th> Fields </th>
                 {% for doc in documents %}
-                    <th>{{ frappe.utils.escape_html(doc) }}</th>
+                    <th>{{ doc }}</th>
                 {% endfor %}
             </thead>
             <tbody>
                 {% for fieldname in field_keys %}
                     <tr>
-                        <td> {{ frappe.utils.escape_html(fieldname) }} </td>
+                        <td> {{ fieldname }} </td>
                         {% var values = changed[fieldname] %}
 
                         {% for value in values %}
-                            <td>{{ frappe.utils.escape_html(value) }}</td>
+                            <td>{{ value }}</td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
@@ -47,22 +47,22 @@
                     {% for table in tables %}
                     <tr>
                         <tr>
-                            <td><b>{{ frappe.utils.escape_html(table) }}</b></td>
+                            <td><b>{{ table }}</b></td>
                             {% for doc in documents %}
-                                <td><b>{{ frappe.utils.escape_html(doc) }}</b></td>
+                                <td><b>{{ doc }}</b></td>
                             {% endfor %}
                         </tr>
 
                         {% var rows = Object.keys(row_changed[table]).sort(); %}
                         {% for idx in rows %}
-                            <tr><td><b>idx : {{ frappe.utils.escape_html(idx) }}</b></td></tr>
+                            <tr><td><b>idx : {{ idx }}</b></td></tr>
                             {% var fields = Object.keys(row_changed[table][idx]).sort(); %}
                             {% for field in fields %}
                                 <tr>
-                                    <td>{{ frappe.utils.escape_html(field) }}</td>
+                                    <td>{{ field }}</td>
                                     {% var values = row_changed[table][idx][field] %}
                                     {% for value in values %}
-                                        <td> {{ frappe.utils.escape_html(value) }} </td>
+                                        <td> {{ value }} </td>
                                     {% endfor %}
                                 </tr>
                             {% endfor %}
