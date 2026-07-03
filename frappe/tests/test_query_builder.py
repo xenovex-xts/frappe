@@ -537,6 +537,33 @@ class TestBuilderMaria(IntegrationTestCase, TestBuilderBase):
 
 @run_only_if(db_type_is.POSTGRES)
 class TestBuilderPostgres(IntegrationTestCase, TestBuilderBase):
+	def test_update_with_join(self):
+		todo = frappe.qb.DocType("ToDo")
+		user = frappe.qb.DocType("User")
+		query = (
+			frappe.qb.update(todo)
+			.join(user)
+			.on(todo.owner == user.name)
+			.set(todo.description, user.full_name)
+			.where(user.enabled == 1)
+		)
+
+		sql = query.get_sql()
+		self.assertEqual(query.get_sql(), sql)
+		self.assertIn('UPDATE "tabToDo"', sql)
+		self.assertIn('SET "description"="tabUser"."full_name"', sql)
+		self.assertIn('FROM "tabUser"', sql)
+		self.assertIn('"tabToDo"."owner"="tabUser"."name"', sql)
+		self.assertNotIn(" JOIN ", sql)
+
+	def test_regexp_operator(self):
+		from frappe.database.postgres.database import modify_query
+
+		self.assertEqual(
+			'SELECT * FROM "tabToDo" WHERE "description"~*%(pattern)s',
+			modify_query('SELECT * FROM "tabToDo" WHERE "description" REGEXP %(pattern)s'),
+		)
+
 	def test_adding_tabs_in_from(self):
 		self.assertEqual('SELECT * FROM "tabNotes"', frappe.qb.from_("Notes").select("*").get_sql())
 		self.assertEqual('SELECT * FROM "__Auth"', frappe.qb.from_("__Auth").select("*").get_sql())

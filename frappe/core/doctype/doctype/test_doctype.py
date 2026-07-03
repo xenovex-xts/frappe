@@ -660,6 +660,11 @@ class TestDocType(IntegrationTestCase):
 
 		self.assertEqual(test_json.test_json_field["hello"], "world")
 
+		for value in ({"hello": "world"}, ["hello", "world"]):
+			doc = frappe.get_doc({"doctype": "Test Json Doctype", "test_json_field": value})
+			valid_value = doc.get_valid_dict()["test_json_field"]
+			self.assertEqual(json.loads(valid_value), value)
+
 	def test_no_delete_doc(self):
 		self.assertRaises(frappe.ValidationError, frappe.delete_doc, "DocType", "Address")
 
