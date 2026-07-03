@@ -223,16 +223,33 @@ def delete_doc(
 					pass
 
 
+# def add_to_deleted_document(doc):
+# 	"""Add this document to Deleted Document table. Called after delete"""
+# 	if doc.doctype != "Deleted Document" and frappe.flags.in_install != "frappe":
+# 		frappe.get_doc(
+# 			doctype="Deleted Document",
+# 			deleted_doctype=doc.doctype,
+# 			deleted_name=doc.name,
+# 			data=doc.as_json(),
+# 			owner=frappe.session.user,
+# 		).db_insert()
+
 def add_to_deleted_document(doc):
 	"""Add this document to Deleted Document table. Called after delete"""
 	if doc.doctype != "Deleted Document" and frappe.flags.in_install != "frappe":
-		frappe.get_doc(
-			doctype="Deleted Document",
-			deleted_doctype=doc.doctype,
-			deleted_name=doc.name,
-			data=doc.as_json(),
-			owner=frappe.session.user,
-		).db_insert()
+		try:
+			frappe.get_doc(
+				doctype="Deleted Document",
+				deleted_doctype=doc.doctype,
+				deleted_name=doc.name,
+				data=doc.as_json(),
+				owner=frappe.session.user,
+			).db_insert()
+		except frappe.ValidationError as e:
+			if "Link Filters cannot be a list" in str(e):
+				print(f"Skipping Deleted Document for {doc.doctype}: {doc.name}")
+			else:
+				raise
 
 
 def update_naming_series(doc):
