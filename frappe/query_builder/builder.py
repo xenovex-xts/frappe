@@ -7,7 +7,11 @@ from pypika.dialects import MySQLQueryBuilder, PostgreSQLQueryBuilder, SQLLiteQu
 from pypika.queries import QueryBuilder, Schema, Table
 from pypika.terms import Function
 
-from frappe.query_builder.terms import ParameterizedValueWrapper, SQLiteParameterizedValueWrapper
+from frappe.query_builder.terms import (
+	ParameterizedValueWrapper,
+	PostgresParameterizedValueWrapper,
+	SQLiteParameterizedValueWrapper,
+)
 from frappe.utils import get_table_name
 
 # less restrictive version of frappe.core.doctype.doctype.doctype.START_WITH_LETTERS_PATTERN
@@ -148,7 +152,7 @@ class Postgres(Base, PostgreSQLQuery):
 
 	@classmethod
 	def _builder(cls, *args, **kwargs) -> "PostgresQueryBuilder":
-		return PostgresQueryBuilder(*args, wrapper_cls=ParameterizedValueWrapper, **kwargs)
+		return PostgresQueryBuilder(*args, wrapper_cls=PostgresParameterizedValueWrapper, **kwargs)
 
 	@classmethod
 	def Field(cls, field_name, *args, **kwargs):

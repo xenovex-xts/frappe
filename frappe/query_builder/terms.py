@@ -72,6 +72,15 @@ class ParameterizedValueWrapper(ValueWrapper):
 		return format_alias_sql(sql, self.alias, quote_char=quote_char, **kwargs)
 
 
+class PostgresParameterizedValueWrapper(ParameterizedValueWrapper):
+	"""Render Python booleans as Frappe Check-field integers on PostgreSQL."""
+
+	def get_sql(self, *args, **kwargs) -> str:
+		if isinstance(self.value, bool):
+			self.value = int(self.value)
+		return super().get_sql(*args, **kwargs)
+
+
 class SQLiteParameterizedValueWrapper(ParameterizedValueWrapper, SQLLiteValueWrapper):
 	pass
 

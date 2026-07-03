@@ -537,6 +537,16 @@ class TestBuilderMaria(IntegrationTestCase, TestBuilderBase):
 
 @run_only_if(db_type_is.POSTGRES)
 class TestBuilderPostgres(IntegrationTestCase, TestBuilderBase):
+	def test_check_field_boolean_values(self):
+		todo = frappe.qb.DocType("ToDo")
+		query = frappe.qb.update(todo).set(todo.enabled, True).where(todo.is_cancelled == False)
+
+		sql = query.get_sql()
+		self.assertIn('SET "enabled"=1', sql)
+		self.assertIn('"is_cancelled"=0', sql)
+		self.assertNotIn("true", sql.lower())
+		self.assertNotIn("false", sql.lower())
+
 	def test_update_with_join(self):
 		todo = frappe.qb.DocType("ToDo")
 		user = frappe.qb.DocType("User")
