@@ -848,6 +848,15 @@ class TestDBQuery(IntegrationTestCase):
 			limit=50,
 		)
 
+	def test_aggregate_only_query_omits_default_ordering(self):
+		query = frappe.get_all(
+			"ToDo",
+			fields=[{"SUM": "idx", "as": "total"}, {"AVG": "docstatus", "as": "average"}],
+			run=False,
+		)
+
+		self.assertNotIn(" order by ", query.lower())
+
 	def test_virtual_field_get_list(self):
 		try:
 			frappe.get_list("Prepared Report", ["*"])

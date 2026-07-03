@@ -27,7 +27,7 @@ import frappe
 from frappe.database.database import Database
 from frappe.database.postgres.schema import PostgresTable
 from frappe.database.utils import EmptyQueryValues, LazyDecode
-from frappe.utils import cstr, get_table_name
+from frappe.utils import cstr, get_table_name, to_timedelta
 
 # cast decimals as floats
 DEC2FLOAT = psycopg2.extensions.new_type(
@@ -37,6 +37,16 @@ DEC2FLOAT = psycopg2.extensions.new_type(
 )
 
 psycopg2.extensions.register_type(DEC2FLOAT)
+
+# Keep PostgreSQL Time fields consistent with Frappe's timedelta contract and
+# with the values returned by the MariaDB driver.
+TIME2DELTA = psycopg2.extensions.new_type(
+	psycopg2.extensions.TIME.values,
+	"TIME2DELTA",
+	lambda value, curs: to_timedelta(value) if value is not None else None,
+)
+
+psycopg2.extensions.register_type(TIME2DELTA)
 
 LOCATE_SUB_PATTERN = re.compile(r"locate\(([^,]+),([^)]+)(\)?)\)", flags=re.IGNORECASE)
 LOCATE_QUERY_PATTERN = re.compile(r"locate\(", flags=re.IGNORECASE)

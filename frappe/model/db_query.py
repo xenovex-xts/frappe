@@ -1185,15 +1185,15 @@ from {tables}
 		else:
 			args.order_by = ""
 
-			# don't add order by from meta if a mysql group function is used without group by clause
+			# Aggregate-only queries return one row and must not inherit the
+			# DocType's default ordering. PostgreSQL also rejects ordering these
+			# queries by an ungrouped column such as `modified`.
 			group_function_without_group_by = (
-				len(self.fields) == 1
-				and (
-					self.fields[0].lower().startswith("count(")
-					or self.fields[0].lower().startswith("min(")
-					or self.fields[0].lower().startswith("max(")
-					or self.fields[0].lower().startswith("sum(")
-					or self.fields[0].lower().startswith("avg(")
+				bool(self.fields)
+				and all(
+					isinstance(field, str)
+					and re.match(r"^\s*(count|min|max|sum|avg)\s*\(", field, flags=re.IGNORECASE)
+					for field in self.fields
 				)
 				and not self.group_by
 			)
