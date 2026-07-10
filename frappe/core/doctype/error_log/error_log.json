@@ -1,6 +1,7 @@
 {
  "actions": [],
- "creation": "2013-01-16 13:09:40",
+ "allow_bulk_edit": 1,
+ "creation": "2026-07-01 13:17:35.482256",
  "doctype": "DocType",
  "document_type": "System",
  "engine": "MyISAM",
@@ -80,6 +81,11 @@
    "fieldtype": "Code",
    "label": "Metadata",
    "read_only": 1
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> bdf397eebe (feat: basic error analysis widget (#40462) (#40734))
   },
   {
    "fieldname": "fingerprint",
@@ -91,6 +97,10 @@
   {
    "fieldname": "section_break_ayos",
    "fieldtype": "Section Break"
+<<<<<<< HEAD
+=======
+>>>>>>> 4c02dc26a5 (feat: basic error analysis widget (#40462) (#40734))
+>>>>>>> bdf397eebe (feat: basic error analysis widget (#40462) (#40734))
   }
  ],
  "icon": "fa fa-warning-sign",
