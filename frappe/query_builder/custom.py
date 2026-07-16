@@ -18,7 +18,7 @@ class GROUP_CONCAT(DistinctOptionFunction):
 		self._separator = ","
 
 	@builder
-	def separator(self, separator: str = ""):
+	def separator(self, separator: str = ","):
 		"""Adds a separator to the GROUP_CONCAT function.
 		Args:
 				separator (str, optional): [separator to be used]. Defaults to ",".
@@ -28,14 +28,22 @@ class GROUP_CONCAT(DistinctOptionFunction):
 	def get_sql(self, **kwargs):
 		query_alias = self.alias
 		self.alias = None
-		sql = super().get_sql(**kwargs)
-		if self._separator:
-			sql = f"{sql[:-1]} SEPARATOR {frappe.db.escape(self._separator)})"
+
+		# PostgreSQL
+		if frappe.db.db_type == "postgres":
+			column_sql = self.args[0].get_sql(**kwargs)
+			sql = f"STRING_AGG({column_sql}, {frappe.db.escape(self._separator)})"
+		# MariaDB / MySQL
+		else:
+			sql = super().get_sql(**kwargs)
+			if self._separator:
+				sql = f"{sql[:-1]} SEPARATOR {frappe.db.escape(self._separator)})"
 
 		self.alias = query_alias
 		if self.alias:
 			quote = kwargs.get("quote_char", "`")
 			sql += f" {quote}{self.alias}{quote}"
+
 		return sql
 
 
@@ -122,21 +130,88 @@ class ConstantColumn(Term):
 		)
 
 
+# class MonthName(Function):
+# 	def __init__(self, field, alias=None):
+# 		super().__init__("MONTHNAME", field, alias=alias)
+
+
+# class Quarter(Function):
+# 	def __init__(self, field, alias=None):
+# 		super().__init__("QUARTER", field, alias=alias)
+
+
+# class Month(Function):
+# 	def __init__(self, field, alias=None):
+# 		super().__init__("MONTH", field, alias=alias)
+
+
+# class Year(Function):
+# 	def __init__(self, field, alias=None):
+# 		super().__init__("YEAR", field, alias=alias)
+
 class MonthName(Function):
 	def __init__(self, field, alias=None):
 		super().__init__("MONTHNAME", field, alias=alias)
+
+	def get_sql(self, **kwargs):
+		# MONTHNAME() is MySQL/MariaDB only.
+		# PostgreSQL equivalent: TO_CHAR(field, 'Month') — returns full month name
+		if frappe.db.db_type == "postgres":
+			field_sql = self.args[0].get_sql(**kwargs)
+			sql = f"TO_CHAR({field_sql}, 'Month')"
+			if self.alias:
+				quote = kwargs.get("quote_char", '"')
+				sql += f' {quote}{self.alias}{quote}'
+			return sql
+		return super().get_sql(**kwargs)
 
 
 class Quarter(Function):
 	def __init__(self, field, alias=None):
 		super().__init__("QUARTER", field, alias=alias)
 
+	def get_sql(self, **kwargs):
+		# QUARTER() is MySQL/MariaDB only.
+		# PostgreSQL equivalent: EXTRACT(QUARTER FROM field)
+		if frappe.db.db_type == "postgres":
+			field_sql = self.args[0].get_sql(**kwargs)
+			sql = f"EXTRACT(QUARTER FROM {field_sql})"
+			if self.alias:
+				quote = kwargs.get("quote_char", '"')
+				sql += f' {quote}{self.alias}{quote}'
+			return sql
+		return super().get_sql(**kwargs)
+
 
 class Month(Function):
 	def __init__(self, field, alias=None):
 		super().__init__("MONTH", field, alias=alias)
 
+	def get_sql(self, **kwargs):
+		# MONTH() is MySQL/MariaDB only.
+		# PostgreSQL equivalent: EXTRACT(MONTH FROM field)
+		if frappe.db.db_type == "postgres":
+			field_sql = self.args[0].get_sql(**kwargs)
+			sql = f"EXTRACT(MONTH FROM {field_sql})"
+			if self.alias:
+				quote = kwargs.get("quote_char", '"')
+				sql += f' {quote}{self.alias}{quote}'
+			return sql
+		return super().get_sql(**kwargs)
+
 
 class Year(Function):
 	def __init__(self, field, alias=None):
 		super().__init__("YEAR", field, alias=alias)
+
+	def get_sql(self, **kwargs):
+		# YEAR() is MySQL/MariaDB only.
+		# PostgreSQL equivalent: EXTRACT(YEAR FROM field)
+		if frappe.db.db_type == "postgres":
+			field_sql = self.args[0].get_sql(**kwargs)
+			sql = f"EXTRACT(YEAR FROM {field_sql})"
+			if self.alias:
+				quote = kwargs.get("quote_char", '"')
+				sql += f' {quote}{self.alias}{quote}'
+			return sql
+		return super().get_sql(**kwargs)
