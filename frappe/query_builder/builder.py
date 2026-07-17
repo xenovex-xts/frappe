@@ -153,6 +153,7 @@ class Postgres(Base, PostgreSQLQuery):
 	@classmethod
 	def _builder(cls, *args, **kwargs) -> "PostgresQueryBuilder":
 		return PostgresQueryBuilder(*args, wrapper_cls=PostgresParameterizedValueWrapper, **kwargs)
+
 	@classmethod
 	def Field(cls, field_name, *args, **kwargs):
 		if field_name in cls.field_translation:
