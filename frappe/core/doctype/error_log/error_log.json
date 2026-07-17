@@ -81,11 +81,6 @@
    "fieldtype": "Code",
    "label": "Metadata",
    "read_only": 1
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
->>>>>>> bdf397eebe (feat: basic error analysis widget (#40462) (#40734))
   },
   {
    "fieldname": "fingerprint",
@@ -97,10 +92,6 @@
   {
    "fieldname": "section_break_ayos",
    "fieldtype": "Section Break"
-<<<<<<< HEAD
-=======
->>>>>>> 4c02dc26a5 (feat: basic error analysis widget (#40462) (#40734))
->>>>>>> bdf397eebe (feat: basic error analysis widget (#40462) (#40734))
   }
  ],
  "icon": "fa fa-warning-sign",
