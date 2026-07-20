@@ -939,6 +939,16 @@ from {tables}
 				fallback = f"'{FallBackDateTimeStr}'"
 
 			elif f.operator.lower() == "is":
+				non_string_fieldtypes = (
+					"Date", "Datetime", "Time", "Int", "Float",
+					"Currency", "Percent", "Check", "Duration",
+				)
+				if df and df.fieldtype in non_string_fieldtypes:
+					if f.value == "set":
+						return f"{column_name} IS NOT NULL"
+					elif f.value == "not set":
+						return f"{column_name} IS NULL"
+
 				fallback = "''"
 				if f.value == "set":
 					f.operator = "!="

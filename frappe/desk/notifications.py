@@ -264,53 +264,54 @@ def get_open_count(doctype: str, name: str, items=None):
 
 
 def _get_linked_document_counts(doctype: str, name: str, items=None):
-	doc = frappe.get_lazy_doc(doctype, name, check_permission=True)
-	meta = doc.meta
-	links = meta.get_dashboard_data()
-
-	# compile all items in a list
-	if items is None:
-		items = []
-		for group in links.transactions:
-			items.extend(group.get("items"))
-
-	if not isinstance(items, list):
-		items = json.loads(items)
-
-	out = {
-		"external_links_found": [],
-		"internal_links_found": [],
-	}
-
-	for d in items:
-		internal_link_for_doctype = links.get("internal_links", {}).get(d) or links.get(
-			"internal_and_external_links", {}
-		).get(d)
-		if internal_link_for_doctype:
-			internal_links_data_for_d = get_internal_links(doc, internal_link_for_doctype, d)
-			if internal_links_data_for_d["count"]:
-				out["internal_links_found"].append(internal_links_data_for_d)
-			else:
-				try:
-					external_links_data_for_d = get_external_links(d, name, links)
-					out["external_links_found"].append(external_links_data_for_d)
-				except Exception:
-					out["external_links_found"].append({"doctype": d, "open_count": 0, "count": 0})
-		else:
-			external_links_data_for_d = get_external_links(d, name, links)
-			out["external_links_found"].append(external_links_data_for_d)
-
-	out = {
-		"count": out,
-	}
-
-	if not meta.custom:
-		module = frappe.get_meta_module(doctype)
-		if hasattr(module, "get_timeline_data"):
-			out["timeline_data"] = module.get_timeline_data(doctype, name)
-
-	return out
-
+    doc = frappe.get_lazy_doc(doctype, name, check_permission=True)
+    meta = doc.meta
+    links = meta.get_dashboard_data()
+ 
+    # compile all items in a list
+    if items is None:
+        items = []
+        for group in links.transactions:
+            items.extend(group.get("items"))
+ 
+    if not isinstance(items, list):
+        items = json.loads(items)
+ 
+    out = {
+        "external_links_found": [],
+        "internal_links_found": [],
+    }
+ 
+    for d in items:
+        internal_link_for_doctype = links.get("internal_links", {}).get(d) or links.get(
+            "internal_and_external_links", {}
+        ).get(d)
+        try:
+            if internal_link_for_doctype:
+                internal_links_data_for_d = get_internal_links(doc, internal_link_for_doctype, d)
+                if internal_links_data_for_d["count"]:
+                    out["internal_links_found"].append(internal_links_data_for_d)
+                else:
+                    external_links_data_for_d = get_external_links(d, name, links)
+                    out["external_links_found"].append(external_links_data_for_d)
+            else:
+                external_links_data_for_d = get_external_links(d, name, links)
+                out["external_links_found"].append(external_links_data_for_d)
+        except Exception:
+            frappe.db.rollback()
+            out["external_links_found"].append({"doctype": d, "open_count": 0, "count": 0})
+ 
+    out = {
+        "count": out,
+    }
+ 
+    if not meta.custom:
+        module = frappe.get_meta_module(doctype)
+        if hasattr(module, "get_timeline_data"):
+            out["timeline_data"] = module.get_timeline_data(doctype, name)
+ 
+    return out
+ 
 
 def get_internal_links(doc, link, link_doctype):
 	names = []

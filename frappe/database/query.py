@@ -636,6 +636,19 @@ class Engine:
 			)
 			return operator_fn(_field, nodes or ("",))
 
+		if _operator.casefold() == "is":
+			non_string_fieldtypes = (
+				"Date", "Datetime", "Time", "Int", "Float",
+				"Currency", "Percent", "Check", "Duration",
+			)
+			lookup_doctype = doctype or self.doctype
+			target_meta = frappe.get_meta(lookup_doctype)
+			original_field_name = field if isinstance(field, str) else getattr(_field, "name", None)
+			df = target_meta.get_field(original_field_name) if original_field_name else None
+			if df and df.fieldtype in non_string_fieldtypes:
+				is_null = _field.isnull()
+				return is_null if str(_value).lower() == "not set" else ~is_null
+
 		if (
 			self.is_postgres and _operator.casefold() == "like"
 		):  # use `ILIKE` to support case insensitive search in postgres
@@ -662,7 +675,7 @@ class Engine:
 				else:
 					try:
 						fallback_value = int(fallback_sql)
-					except ValueError, TypeError:
+					except (ValueError, TypeError):
 						fallback_value = fallback_sql
 
 				return operator_fn(_field, ValueWrapper(fallback_value))
@@ -691,7 +704,7 @@ class Engine:
 				else:
 					try:
 						fallback_value = int(fallback_sql)
-					except ValueError, TypeError:
+					except (ValueError, TypeError):
 						fallback_value = fallback_sql
 
 				if fallback_value == _value:
